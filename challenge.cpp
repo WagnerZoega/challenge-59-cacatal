@@ -75,7 +75,9 @@ bool need_new_positions = false;
 
 // Adicione estas variáveis globais após as outras variáveis globais
 const int FIXED_POS_BEFORE_X = 8;  // Posição do caractere "4" antes do "x" (índice 0-based)
+const int FIXED_POS_FIRST = 0;      // Posição do primeiro caractere (índice 0)
 const int FIXED_POS_AFTER_X = 10;  // Posição do caractere "8" após do "x" (índice 0-based)
+const char FIXED_CHAR_FIRST = '6';  // Caractere fixo '6'
 const char FIXED_CHAR_BEFORE_X = '4';
 const char FIXED_CHAR_AFTER_X = '8';
 
@@ -131,7 +133,8 @@ int validate_input(int value, const std::string& prompt) {
 void auto_select_positions() {
     if (x_positions.size() == 1) {
         std::cout << "Auto-selecting 8 additional positions for substitution..." << std::endl;
-        std::cout << yellow << "Note: Positions " << FIXED_POS_BEFORE_X << " ('" << FIXED_CHAR_BEFORE_X 
+        std::cout << yellow << "Note: Positions " << FIXED_POS_FIRST << " ('" << FIXED_CHAR_FIRST << "'), "
+                  << FIXED_POS_BEFORE_X << " ('" << FIXED_CHAR_BEFORE_X 
                   << "') and " << FIXED_POS_AFTER_X << " ('" << FIXED_CHAR_AFTER_X 
                   << "') will remain fixed!" << reset << std::endl;
         
@@ -152,6 +155,7 @@ void auto_select_positions() {
             
             // Verifica se a posição já está selecionada, é o 'x' original, ou é uma posição fixa
             if (pos != original_x_pos && 
+                pos != FIXED_POS_FIRST &&
                 pos != FIXED_POS_BEFORE_X && 
                 pos != FIXED_POS_AFTER_X &&
                 std::find(additional_positions.begin(), additional_positions.end(), pos) == additional_positions.end() &&
@@ -224,6 +228,9 @@ std::string generate_random_key(std::vector<std::string> &output_key) {
         std::string new_key = partial_key;
 
         // Garantir que os caracteres fixos estejam corretos antes de qualquer substituição
+        if (partial_key[FIXED_POS_FIRST] != FIXED_CHAR_FIRST) {
+            new_key[FIXED_POS_FIRST] = FIXED_CHAR_FIRST;
+        }
         if (partial_key[FIXED_POS_BEFORE_X] != FIXED_CHAR_BEFORE_X) {
             new_key[FIXED_POS_BEFORE_X] = FIXED_CHAR_BEFORE_X;
         }
@@ -245,6 +252,7 @@ std::string generate_random_key(std::vector<std::string> &output_key) {
             }
             
             // Garante que os caracteres fixos não sejam alterados
+            new_key[FIXED_POS_FIRST] = FIXED_CHAR_FIRST;
             new_key[FIXED_POS_BEFORE_X] = FIXED_CHAR_BEFORE_X;
             new_key[FIXED_POS_AFTER_X] = FIXED_CHAR_AFTER_X;
         } else {
@@ -256,6 +264,7 @@ std::string generate_random_key(std::vector<std::string> &output_key) {
             }
             
             // Garante que os caracteres fixos não sejam alterados
+            new_key[FIXED_POS_FIRST] = FIXED_CHAR_FIRST;
             new_key[FIXED_POS_BEFORE_X] = FIXED_CHAR_BEFORE_X;
             new_key[FIXED_POS_AFTER_X] = FIXED_CHAR_AFTER_X;
         }
@@ -593,6 +602,13 @@ int main(int argc, char* argv[]){
         partial_key = config.partial_key;
         
         // Verifique se os caracteres fixos estão corretos no template
+        if (partial_key.length() > FIXED_POS_FIRST && partial_key[FIXED_POS_FIRST] != FIXED_CHAR_FIRST) {
+            std::cout << yellow << "Warning: Character at position " << FIXED_POS_FIRST 
+                      << " (" << partial_key[FIXED_POS_FIRST] 
+                      << ") will be fixed as '" << FIXED_CHAR_FIRST << "'" << reset << std::endl;
+            partial_key[FIXED_POS_FIRST] = FIXED_CHAR_FIRST;
+        }
+        
         if (partial_key.length() > FIXED_POS_BEFORE_X && partial_key[FIXED_POS_BEFORE_X] != FIXED_CHAR_BEFORE_X) {
             std::cout << yellow << "Warning: Character at position " << FIXED_POS_BEFORE_X 
                       << " (" << partial_key[FIXED_POS_BEFORE_X] 
