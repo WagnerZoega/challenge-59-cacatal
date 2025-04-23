@@ -5,4 +5,9 @@ make
 
 EXEMPLO:
 
+#busca aleatoria de 8 caracteres + "x" fixo
 ./challenge -a -t 20 -d 15bzD5ofuJw6tNBAaWqUhe9ukpQLdWr7Ar -i config.txt -s
+
+
+#busca com template pre configura com "x" faltantes
+./challenge -t 20 -d 15bzD5ofuJw6tNBAaWqUhe9ukpQLdWr7Ar -i config.txt -s
