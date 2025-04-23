@@ -5,4 +5,4 @@ make
 
 EXEMPLO:
 
-./challenge -a -t 20 -d 15bzD5ofuJw6tNBAaWqUhe9ukpQLdWr7Ar -i -a config.txt -s
+./challenge -a -t 20 -d 15bzD5ofuJw6tNBAaWqUhe9ukpQLdWr7Ar -i config.txt -s
