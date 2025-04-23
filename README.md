@@ -38,7 +38,7 @@ Altere o arquivo config.txt:
 Exemplo básico:
 ```bash
 ./challenge -t 20 -s
-./challenge -a -t 20 -d (sua carteira) -i -a config.txt -s
+./challenge -a -t 20 -d (sua carteira) -i config.txt -s
 ```
 
 Opções disponíveis:
