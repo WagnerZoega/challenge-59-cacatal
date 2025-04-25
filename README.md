@@ -1,6 +1,9 @@
 # Descrição
 
-Desafio 59 site Caçatal
+Desafio do canal Investidor Internacional
+
+Como funciona o desafio: https://www.youtube.com/watch?v=4JAquWro4rg
+<strong>Premio: 0.0015 BTC</strong>
 
 # Uso
 
@@ -9,10 +12,6 @@ Instale as bibliotecas, dependências e compile o código
 # Instalação das dependências
 sudo apt update
 sudo apt install libsecp256k1-dev libssl-dev git make g++ python3 python3-pip -y
-pip3 install bit
-
-# Compilação
-make && ./challenge -h
 
 # Instalar biblioteca Python bit (ambiente virtual recomendado)
 python3 -m venv env
@@ -38,7 +37,6 @@ Altere o arquivo config.txt:
 Exemplo básico:
 ```bash
 ./challenge -t 20 -s
-./challenge -a -t 20 -d (sua carteira) -i -a config.txt -s
 ```
 
 Opções disponíveis:
@@ -48,7 +46,6 @@ Opções disponíveis:
 -i <arquivo_config>    Define o arquivo de configuração (padrão: config.txt)
 -s                     Salva o progresso no arquivo {partial_key}.txt
 -h                     Mostra a mensagem de ajuda
--a                     Modo Auto-seleção: para um unico 'x' no template, e randomiza + 8 caracteres a cada iteração completa"
 ```
 
 ## Solução de Problemas

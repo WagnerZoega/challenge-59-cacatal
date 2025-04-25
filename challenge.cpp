@@ -76,9 +76,11 @@ bool need_new_positions = false;
 // Adicione estas variáveis globais após as outras variáveis globais
 const int FIXED_POS_BEFORE_X = 8;  // Posição do caractere "4" antes do "x" (índice 0-based)
 const int FIXED_POS_FIRST = 0;      // Posição do primeiro caractere (índice 0)
+const int FIXED_POS_MIDDLE = 9;     // Posição do caractere "3" no meio (índice 0-based)
 const int FIXED_POS_AFTER_X = 10;  // Posição do caractere "8" após do "x" (índice 0-based)
 const char FIXED_CHAR_FIRST = '6';  // Caractere fixo '6'
 const char FIXED_CHAR_BEFORE_X = '4';
+const char FIXED_CHAR_MIDDLE = '3';  // Caractere fixo '3' na posição do meio
 const char FIXED_CHAR_AFTER_X = '8';
 
 // Terminal Colors
@@ -131,66 +133,78 @@ int validate_input(int value, const std::string& prompt) {
 }
 
 void auto_select_positions() {
-    if (x_positions.size() == 1) {
-        std::cout << "Auto-selecting 8 additional positions for substitution..." << std::endl;
-        std::cout << yellow << "Note: Positions " << FIXED_POS_FIRST << " ('" << FIXED_CHAR_FIRST << "'), "
-                  << FIXED_POS_BEFORE_X << " ('" << FIXED_CHAR_BEFORE_X 
-                  << "') and " << FIXED_POS_AFTER_X << " ('" << FIXED_CHAR_AFTER_X 
-                  << "') will remain fixed!" << reset << std::endl;
+    // Removida dependência de x_positions - sempre executa no modo auto-select
+    std::cout << green << "\n===== AUTO-SELECT MODE: Selecionando 8 posições aleatórias =====" << reset << std::endl;
+    std::cout << yellow << "Posições fixas: " 
+              << FIXED_POS_FIRST << " ('" << FIXED_CHAR_FIRST << "'), "
+              << FIXED_POS_BEFORE_X << " ('" << FIXED_CHAR_BEFORE_X << "'), "
+              << FIXED_POS_MIDDLE << " ('" << FIXED_CHAR_MIDDLE << "'), "
+              << FIXED_POS_AFTER_X << " ('" << FIXED_CHAR_AFTER_X << "')" << reset << std::endl;
+    
+    // Limpa as posições anteriores e reinicia o contador
+    additional_positions.clear();
+    positions_combinations_tested = 0;
+    
+    std::random_device rd;
+    std::mt19937_64 gen(rd() + std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    std::uniform_int_distribution<> dist(0, partial_key.size() - 1);
+    
+    // Seleciona exatamente 8 posições para substituição
+    int count = 0;
+    while (count < 8) {
+        int pos = dist(gen);
         
-        // Limpa as posições anteriores e reinicia o contador
-        additional_positions.clear();
-        
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_int_distribution<> dist(0, partial_key.size() - 1);
-        
-        // Guardamos a posição original do 'x'
-        int original_x_pos = x_positions[0];
-        
-        // Seleciona 8 posições adicionais
-        int count = 0;
-        while (count < 8) {
-            int pos = dist(gen);
+        // Verifica se a posição já está selecionada ou é uma posição fixa
+        if (pos != FIXED_POS_FIRST &&
+            pos != FIXED_POS_BEFORE_X && 
+            pos != FIXED_POS_MIDDLE &&
+            pos != FIXED_POS_AFTER_X &&
+            std::find(additional_positions.begin(), additional_positions.end(), pos) == additional_positions.end()) {
             
-            // Verifica se a posição já está selecionada, é o 'x' original, ou é uma posição fixa
-            if (pos != original_x_pos && 
-                pos != FIXED_POS_FIRST &&
-                pos != FIXED_POS_BEFORE_X && 
-                pos != FIXED_POS_AFTER_X &&
-                std::find(additional_positions.begin(), additional_positions.end(), pos) == additional_positions.end() &&
-                partial_key[pos] != 'x' && partial_key[pos] != 'y' && 
-                partial_key[pos] != 'z' && partial_key[pos] != 'w') {
-                
-                additional_positions.push_back(pos);
-                count++;
-                std::cout << "Added position " << pos << " (character: " << partial_key[pos] << ")" << std::endl;
-            }
+            additional_positions.push_back(pos);
+            count++;
+            std::cout << "Posição adicionada: " << blue << pos << reset << " (caractere original: '" << green << partial_key[pos] << reset << "')" << std::endl;
         }
-        
-        // Calcula o número total de combinações para estas posições
-        max_positions_combinations = static_cast<std::uint64_t>(pow(16, 9)); // 16^9 combinações (1 'x' original + 8 posições)
-        need_new_positions = false;
-        
-        std::cout << green << "Combinações totais para posições selecionadas: " << max_positions_combinations << reset << std::endl;
     }
+    
+    // Imprime as posições selecionadas em ordem para melhor visualização
+    std::cout << blue << "Posições selecionadas (ordenadas): ";
+    std::vector<int> sorted_positions = additional_positions;
+    std::sort(sorted_positions.begin(), sorted_positions.end());
+    for (size_t i = 0; i < sorted_positions.size(); i++) {
+        std::cout << sorted_positions[i];
+        if (i < sorted_positions.size() - 1) std::cout << ", ";
+    }
+    std::cout << reset << std::endl;
+    
+    // Calcula o número total de combinações para estas posições: 16^8 = 4.294.967.296
+    max_positions_combinations = static_cast<std::uint64_t>(pow(16, 8)); // 16^8 combinações para 8 posições
+    need_new_positions = false;
+    
+    std::cout << green << "Combinações totais para estas posições: " << max_positions_combinations << " (16^8)" << reset << std::endl;
+    std::cout << yellow << "Dificuldade efetiva: " << (8 * 4) << " bits" << reset << std::endl;
 }
 
 std::string generate_random_prefix(){
+    // Melhora a geração aleatória usando uma semente mais forte
     std::random_device rd;
-    std::mt19937 gen(rd()+14061995);
+    std::mt19937_64 gen(rd() + std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    std::uniform_int_distribution<int> dist(0, 15); // Distribuição uniforme para hexadecimal (0-15)
     std::stringstream ss;
     
-    // No modo auto-select com apenas 1 'x', geramos caracteres para todas as posições (x original + adicionais)
-    int positions_count = x_positions.size();
-    if (auto_select_mode && x_positions.size() == 1) {
-        positions_count = 1 + additional_positions.size(); // 1 'x' original + 8 posições adicionais
+    // No modo auto-select, geramos exatamente 8 caracteres aleatórios
+    int positions_count;
+    if (auto_select_mode) {
+        positions_count = 8;  // Sempre 8 posições no modo auto-select
     } else {
         positions_count = x_positions.size() - 4; // Modo normal, reservando 4 posições para sequencial
     }
     
+    // Gera um caractere hexadecimal aleatório para cada posição
     for (int i=0; i < positions_count; i++){
-        ss << std::hex << hex_chars[gen()%16];
+        int random_value = dist(gen);
+        char hex_char = hex_chars[random_value];
+        ss << hex_char;
     }
     
     //key for "z"
@@ -206,7 +220,6 @@ std::string generate_random_prefix(){
 
 // Função para gerar as chaves
 std::string generate_random_key(std::vector<std::string> &output_key) {
-    
     unsigned int sequential_counter = 0;
     std::string random_prefix;
 
@@ -223,50 +236,52 @@ std::string generate_random_key(std::vector<std::string> &output_key) {
     }
 
     //Itera sobre o array de chaves
-    for (int position = 0; position < output_key.size(); position ++){
-
+    for (int position = 0; position < output_key.size(); position++) {
         std::string new_key = partial_key;
 
-        // Garantir que os caracteres fixos estejam corretos antes de qualquer substituição
-        if (partial_key[FIXED_POS_FIRST] != FIXED_CHAR_FIRST) {
-            new_key[FIXED_POS_FIRST] = FIXED_CHAR_FIRST;
-        }
-        if (partial_key[FIXED_POS_BEFORE_X] != FIXED_CHAR_BEFORE_X) {
-            new_key[FIXED_POS_BEFORE_X] = FIXED_CHAR_BEFORE_X;
-        }
-        if (partial_key[FIXED_POS_AFTER_X] != FIXED_CHAR_AFTER_X) {
-            new_key[FIXED_POS_AFTER_X] = FIXED_CHAR_AFTER_X;
-        }
+        // Garantir que os caracteres fixos estejam sempre corretos
+        new_key[FIXED_POS_FIRST] = FIXED_CHAR_FIRST;
+        new_key[FIXED_POS_BEFORE_X] = FIXED_CHAR_BEFORE_X;
+        new_key[FIXED_POS_MIDDLE] = FIXED_CHAR_MIDDLE;
+        new_key[FIXED_POS_AFTER_X] = FIXED_CHAR_AFTER_X;
         
-        // Adicionar os x aleatórios e caracteres nas posições adicionais
-        int x_index = 0;
-        
-        // Modo auto-select com apenas 1 'x'
-        if (auto_select_mode && x_positions.size() == 1) {
-            // Substitui o 'x' original
-            new_key[x_positions[0]] = random_prefix[0];
-            
-            // Substitui os caracteres nas posições adicionais
+        // Modo auto-select
+        if (auto_select_mode) {
+            // Substitui os caracteres nas posições selecionadas
             for (size_t i = 0; i < additional_positions.size(); i++) {
-                new_key[additional_positions[i]] = random_prefix[i+1]; // +1 porque já usamos a posição 0 para o 'x' original
+                new_key[additional_positions[i]] = random_prefix[i];
             }
             
-            // Garante que os caracteres fixos não sejam alterados
-            new_key[FIXED_POS_FIRST] = FIXED_CHAR_FIRST;
-            new_key[FIXED_POS_BEFORE_X] = FIXED_CHAR_BEFORE_X;
-            new_key[FIXED_POS_AFTER_X] = FIXED_CHAR_AFTER_X;
+            // Substituir TODOS os 'x' restantes com valores aleatórios
+            for (size_t i = 0; i < new_key.length(); i++) {
+                if (new_key[i] == 'x') {
+                    std::random_device rd;
+                    std::mt19937 gen(rd() + position + i);
+                    std::uniform_int_distribution<int> dist(0, 15);
+                    new_key[i] = hex_chars[dist(gen)];
+                }
+            }
         } else {
-            // Modo normal
+            // Modo normal - processa os 'x' conforme a lógica original
+            int x_index = 0;
             for (int i = 0; i < partial_key.size(); i++){
                 if (partial_key[i] == 'x' && x_index < x_positions.size()-4) {
                     new_key[i] = random_prefix[x_index++];
                 }
             }
             
-            // Garante que os caracteres fixos não sejam alterados
-            new_key[FIXED_POS_FIRST] = FIXED_CHAR_FIRST;
-            new_key[FIXED_POS_BEFORE_X] = FIXED_CHAR_BEFORE_X;
-            new_key[FIXED_POS_AFTER_X] = FIXED_CHAR_AFTER_X;
+            // Geração dos 4 últimos 'x's sequenciais
+            std::stringstream seq_ss;
+            seq_ss << std::hex << std::setw(4) << std::setfill('0') << sequential_counter;
+            std::string seq = seq_ss.str();
+            
+            // Substitui os últimos 'x's com a sequência
+            x_index = 0;
+            for (int i = partial_key.size() - 1; i >= 0 && x_index < 4; i--) {
+                if (partial_key[i] == 'x') {
+                    new_key[i] = seq[3 - x_index++]; // Invertido para usar da esquerda para a direita
+                }
+            }
         }
         
         // Processa os caracteres especiais z, y, w
@@ -282,24 +297,15 @@ std::string generate_random_key(std::vector<std::string> &output_key) {
             }
         }        
 
-        // Geração sequencial - só no modo normal
-        if (!(auto_select_mode && x_positions.size() == 1)) {
-            // Geração dos 4 últimos 'x's sequenciais
-            std::stringstream seq_ss;
-            seq_ss << std::hex << std::setw(4) << std::setfill('0') << sequential_counter;
-            std::string seq = seq_ss.str();
-            
-            // Substitui os últimos 'x's com a sequência
-            x_index = 0;
-            for (int i = partial_key.size() - 1; i >= 0 && x_index < 4; i--) {
-                if (partial_key[i] == 'x') {
-                    new_key[i] = seq[x_index++];
-                }
-            }
-        }
-
         // Incrementa o contador sequencial
         sequential_counter++;
+        
+        // Verifica novamente se não há 'x' remanescentes
+        for (size_t i = 0; i < new_key.length(); i++) {
+            if (new_key[i] == 'x') {
+                new_key[i] = hex_chars[0]; // Substitui com '0' se algum 'x' escapou
+            }
+        }
 
         // Armazena a chave gerada no vetor de saída
         output_key[position] = new_key;
@@ -401,7 +407,7 @@ int check_key(std::vector<std::string> &generated_keys, std::string prefix){
     }
     
     // Atualiza contador de combinações e verifica necessidade de rotação
-    if (auto_select_mode && x_positions.size() == 1) {
+    if (auto_select_mode) {
         positions_combinations_tested += batch_size;
         
         // Se testamos mais de 95% das combinações para as posições atuais, prepara para selecionar novas
@@ -616,6 +622,13 @@ int main(int argc, char* argv[]){
             partial_key[FIXED_POS_BEFORE_X] = FIXED_CHAR_BEFORE_X;
         }
         
+        if (partial_key.length() > FIXED_POS_MIDDLE && partial_key[FIXED_POS_MIDDLE] != FIXED_CHAR_MIDDLE) {
+            std::cout << yellow << "Warning: Character at position " << FIXED_POS_MIDDLE 
+                      << " (" << partial_key[FIXED_POS_MIDDLE] 
+                      << ") will be fixed as '" << FIXED_CHAR_MIDDLE << "'" << reset << std::endl;
+            partial_key[FIXED_POS_MIDDLE] = FIXED_CHAR_MIDDLE;
+        }
+        
         if (partial_key.length() > FIXED_POS_AFTER_X && partial_key[FIXED_POS_AFTER_X] != FIXED_CHAR_AFTER_X) {
             std::cout << yellow << "Warning: Character at position " << FIXED_POS_AFTER_X 
                       << " (" << partial_key[FIXED_POS_AFTER_X] 
@@ -650,23 +663,12 @@ int main(int argc, char* argv[]){
         load_checked();
 
         // Após carregar as posições dos x's, ative o modo auto-select se necessário
-        if (auto_select_mode && xcounter == 1) {
+        if (auto_select_mode) {
             auto_select_positions();
             
-            // Ajusta o cálculo de dificuldade para considerar as posições adicionais
-            xcounter = 1 + additional_positions.size();
-            std::cout << reset << " Modo Auto-Seleção: " << green << "ON - Usando " << xcounter << " posições" << std::endl;
-        }
-        
-        // Se modo auto-select está ativado mas não foi aplicado (porque há mais de 1 'x')
-        if (auto_select_mode && xcounter != 1 + additional_positions.size()) {
-            std::cout << reset << " Modo Auto-Seleção: " << yellow << "OFF - Template tem " << x_positions.size() << " 'x' posições" << std::endl;
-            auto_select_mode = false;
-        }
-
-        if (teste) {
-            testSpeed();
-            exit(1);
+            // Ajusta o cálculo de dificuldade
+            xcounter = 8;  // Sempre 8 posições = 32 bits no modo auto-select
+            std::cout << reset << " Modo Auto-Seleção: " << green << "ON - Usando 8 posições (32 bits)" << std::endl;
         }
 
         // Configura as threads
@@ -683,14 +685,30 @@ int main(int argc, char* argv[]){
 
         //Informações sobre a carteira e a chave parcial
         std::uint64_t total_batches = 1;
-        for (int i=0; i < xcounter - 4 ; i++){
-            total_batches *= 16;
+        
+        // Corrige o cálculo do total de lotes
+        if (auto_select_mode) {
+            // Para o modo auto-select com 8 posições, usamos o valor já calculado
+            total_batches = max_positions_combinations / batch_size;
+        } else {
+            // Modo normal - calcula com base no número de posições variáveis
+            int variableBits = 0;
+            if (xcounter > 4) {
+                variableBits += (xcounter - 4) * 4;  // Cada 'x' contribui com 4 bits
+            }
+            variableBits += zcounter * 3;  // Cada 'z' contribui com 3 bits
+            variableBits += ycounter * 4;  // Cada 'y' contribui com 4 bits
+            variableBits += wcounter * 4;  // Cada 'w' contribui com 4 bits
+            
+            if (variableBits > 0) {
+                total_batches = static_cast<std::uint64_t>(pow(2, variableBits)) / batch_size;
+            }
         }
-        for (int i=0; i < zcounter ; i++){
-            total_batches *= 7;
-        }
-        for (int i=0; i < ycounter ; i++){
-            total_batches *= 13;
+
+        std::uint64_t already_verified_batches = random_prefixes.size();
+        if (total_batches <= already_verified_batches && total_batches > 1){
+            std::cout << red << "Chave encontrada, verifique key.txt com o comando 'cat key.txt', caso contrário, apague todos os .txt" << std::endl;
+            kill(0, SIGKILL);
         }
 
         std::cout << reset << "  feito por " << yellow << "Ataide Freitas" << blue << " https://github.com/ataidefcjr" << std::endl;
@@ -699,8 +717,13 @@ int main(int argc, char* argv[]){
         std::cout << reset << "  Doações: " << yellow << "15bzD5ofuJw6tNBAaWqUhe9ukpQLdWr7Ar\n" << std::endl ;
         std::cout << reset << "\n Iniciar busca por endereço: " << green << target_address << std::endl;
         std::cout << reset << "  Chave Parcial: " << green << partial_key << std::endl;
-        std::cout << reset << "  Dificuldade: "<< red << (xcounter * 4) + (zcounter * 2) << " bits"<< std::endl;
-        std::cout << reset << "\n Threads: " << green << num_threads << std::endl;
+        
+        // Corrige a exibição da dificuldade
+        if (auto_select_mode) {
+            std::cout << reset << "  Dificuldade: " << red << "32 bits (8 posições variando de 0-f)" << std::endl;
+        } else {
+            std::cout << reset << "  Dificuldade: " << red << (xcounter * 4) + (zcounter * 3) + (ycounter * 4) + (wcounter * 4) << " bits" << std::endl;
+        }
         
         if (send){
             std::cout << reset << "\n Endereço de destino: " << green << destination << "" << std::endl;  
@@ -717,19 +740,15 @@ int main(int argc, char* argv[]){
             std::cout << red << "\n ------ Testing with puzzle 69 address ------\n" << std::endl;
         }
 
-        std::uint64_t already_verified_batches = random_prefixes.size();
-        if (total_batches <= already_verified_batches && total_batches > 1){
-            std::cout << red << "Chave encontrada, verifique key.txt com o comando 'cat key.txt', caso contrário, apague todos os .txt" << std::endl;
-            kill(0, SIGKILL);
-        }
-
         auto start_time = std::chrono::high_resolution_clock::now();
 
         while (!found) {
 
             // Verifica se precisamos selecionar novas posições
-            if (auto_select_mode && x_positions.size() == 1 && need_new_positions) {
-                std::cout << yellow << "\nRotacionando posições - selecionando novas posições de caracteres..." << reset << std::endl;
+            if (auto_select_mode && need_new_positions) {
+                std::cout << yellow << "\n===== ROTAÇÃO DE POSIÇÕES: Esgotadas " 
+                          << (positions_combinations_tested * 100 / max_positions_combinations) 
+                          << "% das combinações. Selecionando novas posições... =====" << reset << std::endl;
                 auto_select_positions();
             }
 
@@ -756,7 +775,7 @@ int main(int argc, char* argv[]){
                 << reset << " Chave/s - Chaves Verificadas: " << green << keys_verified + keys_already_verified;
                 
                 // Mostra progresso da rotação atual (apenas no modo auto-select)
-                if (auto_select_mode && x_positions.size() == 1) {
+                if (auto_select_mode) {
                     double rotation_progress = (double)positions_combinations_tested / max_positions_combinations * 100.0;
                     std::cout << reset << " - Rotações: " << cyan << static_cast<int>(rotation_progress) << "%" << reset;
                 }

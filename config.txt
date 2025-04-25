@@ -1,12 +1,13 @@
-6123ae954x8e22e11b4a116b4c0c3d514ecf6cfede99370cabebf4f282b4228f
+6123ae95438e22e11b4a116b4c0c3d514ecf6cfede99370cabebf4f282b4228f
 1EAZegifEThgWjWXuJR9eZZ4TfoXpnenQC
 
 // O programa manterá fixos os caracteres:
 // - "4" na posição 8 (antes do "x")
+// - "3" na posição 9 (meio)
 // - "8" na posição 10 (após o "x")
-// - "6" na posição 0 
+// - "6" na posição 0 (primeiro caractere)
 
----------- 6123ae95418e22e11b4a116b4c0c3d514ecf6cfede99370cabebf4f282b4228f ---------
+---------- 6123ae95438e22e11b4a116b4c0c3d514ecf6cfede99370cabebf4f282b4228f ---------
 ------------------------------ chave alterada ---------------------------------------
 
 
